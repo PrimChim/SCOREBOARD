@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Control Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0f172a;
+            color: #ffffff;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+        h2 { color: #FFD700; text-align: center; border-bottom: 2px solid #FFD700; padding-bottom: 10px; }
+        .control-card {
+            background: #1e293b;
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        label { font-size: 14px; color: #94a3b8; display: block; margin-bottom: 5px; }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: white;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        .row { display: flex; gap: 15px; }
+        .col { flex: 1; text-align: center; }
+        .btn-group { display: flex; gap: 5px; justify-content: center; margin-top: 5px; }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-plus { background: #22c55e; color: white; }
+        .btn-minus { background: #ef4444; color: white; }
+        .btn-main { background: #3b82f6; color: white; width: 100%; margin-top: 5px; }
+        .btn-timer { background: #eab308; color: #000; flex: 1; }
+        button:hover { opacity: 0.85; }
+        .score-display-num { font-size: 28px; font-weight: 700; color: #FFD700; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <h2>⚽ Match Control Panel</h2>
+
+    <!-- Team Names & Period Setup -->
+    <div class="control-card">
+        <label>Team 1 Name (Home)</label>
+        <input type="text" id="team1Input" value="Home Team" oninput="saveData()">
+
+        <label>Team 2 Name (Away)</label>
+        <input type="text" id="team2Input" value="Away Team" oninput="saveData()">
+
+        <label>Match Period / Half</label>
+        <select id="periodInput" onchange="saveData()">
+            <option value="1st Half">1st Half</option>
+            <option value="Half Time">Half Time</option>
+            <option value="2nd Half">2nd Half</option>
+            <option value="Extra Time">Extra Time</option>
+            <option value="Full Time">Full Time</option>
+        </select>
+    </div>
+
+    <!-- Scores Control -->
+    <div class="control-card row">
+        <div class="col">
+            <label id="labelTeam1">Home Team</label>
+            <div class="score-display-num" id="score1Display">0</div>
+            <div class="btn-group">
+                <button class="btn-plus" onclick="changeScore(1, 1)">+1</button>
+                <button class="btn-minus" onclick="changeScore(1, -1)">-1</button>
+            </div>
+        </div>
+        <div class="col">
+            <label id="labelTeam2">Away Team</label>
+            <div class="score-display-num" id="score2Display">0</div>
+            <div class="btn-group">
+                <button class="btn-plus" onclick="changeScore(2, 1)">+1</button>
+                <button class="btn-minus" onclick="changeScore(2, -1)">-1</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timer Control -->
+    <div class="control-card">
+        <label>Match Timer (MM:SS)</label>
+        <input type="text" id="timerInput" value="00:00" style="text-align: center; font-size: 24px; font-weight: bold;" oninput="saveData()">
+        <div class="btn-group">
+            <button class="btn-timer" onclick="startTimer()">Start</button>
+            <button class="btn-timer" onclick="pauseTimer()" style="background: #f97316;">Pause</button>
+            <button class="btn-timer" onclick="resetTimer()" style="background: #64748b; color: white;">Reset</button>
+        </div>
+    </div>
+
+    <script>
+        let score1 = 0;
+        let score2 = 0;
+        let timerInterval = null;
+        let totalSeconds = 0;
+
+        function getData() {
+            return {
+                team1: document.getElementById('team1Input').value,
+                team2: document.getElementById('team2Input').value,
+                score1: score1,
+                score2: score2,
+                timer: document.getElementById('timerInput').value,
+                period: document.getElementById('periodInput').value
+            };
+        }
+
+        function saveData() {
+            document.getElementById('labelTeam1').innerText = document.getElementById('team1Input').value;
+            document.getElementById('labelTeam2').innerText = document.getElementById('team2Input').value;
+            localStorage.setItem('matchData', JSON.stringify(getData()));
+        }
+
+        function changeScore(team, amount) {
+            if (team === 1) {
+                score1 = Math.max(0, score1 + amount);
+                document.getElementById('score1Display').innerText = score1;
+            } else {
+                score2 = Math.max(0, score2 + amount);
+                document.getElementById('score2Display').innerText = score2;
+            }
+            saveData();
+        }
+
+        function updateTimerInput() {
+            let minutes = Math.floor(totalSeconds / 60);
+            let seconds = totalSeconds % 60;
+            let formatted = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+            document.getElementById('timerInput').value = formatted;
+            saveData();
+        }
+
+        function startTimer() {
+            if (timerInterval) return;
+            timerInterval = setInterval(() => {
+                totalSeconds++;
+                updateTimerInput();
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            totalSeconds = 0;
+            updateTimerInput();
+        }
+
+        // Initial save
+        saveData();
+    </script>
+</body>
+</html>
